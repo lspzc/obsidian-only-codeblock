@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
-	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"name": "obsidian-only-codeblock",
+	"version": "0.1.0",
+	"description": "增强 Obsidian 代码块的样式与功能（参考语雀风格）",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {

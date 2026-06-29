@@ -1,11 +1,10 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
-	"version": "1.0.0",
-	"minAppVersion": "1.0.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"id": "obsidian-only-codeblock",
+	"name": "Only Codeblock",
+	"version": "0.1.0",
+	"minAppVersion": "1.4.16",
+	"description": "增强 Obsidian 代码块的样式与功能（参考语雀风格，仅在阅读视图生效）",
+	"author": "lsp_z",
+	"authorUrl": "https://github.com/",
 	"isDesktopOnly": false
 }
