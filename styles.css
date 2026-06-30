@@ -1,12 +1,10 @@
 /*
  * Only Codeblock 插件样式
  *
- * 设计风格：Material Design 3
- *   - 圆角更柔和（12px/16px）
- *   - 柔和的层级阴影（elevation）
- *   - 悬停/激活有微妙的状态层
- *   - 间距宽松、排版克制
- *   - 颜色与边框使用 CSS 变量动态控制
+ * 设计原则：
+ *   - 按钮不显示按钮样式（无边框无背景），仅显示文字/图标，hover 时显示背景
+ *   - 圆角使用 Obsidian CSS 变量（--radius-s / --radius-m / --radius-l）
+ *   - 所有颜色通过 CSS 变量动态控制，切换主题时自动适应
  *
  * 所有样式都加 .ocbe- 前缀，避免与其他插件或主题冲突。
  */
@@ -15,8 +13,8 @@
 
 .ocbe-wrapper {
 	/* ---- 设计 token（可被内联变量覆盖） ---- */
-	--ocbe-radius: 12px;
-	--ocbe-radius-sm: 8px;
+	--ocbe-radius: var(--radius-m, 8px);
+	--ocbe-radius-sm: var(--radius-s, 6px);
 	--ocbe-header-h: 40px;
 	--ocbe-border-color: var(--background-modifier-border);
 	--ocbe-border-color-strong: var(--background-modifier-border-hover);
@@ -24,21 +22,18 @@
 	--ocbe-text-muted: var(--text-muted);
 	--ocbe-text-faint: var(--text-faint);
 	--ocbe-selected-border: var(--interactive-accent);
+	--ocbe-selected-border-width: 2px;
 	--ocbe-header-bg: var(--background-secondary);
 	--ocbe-code-bg: var(--background-primary);
+	--ocbe-hover-bg: var(--background-modifier-hover);
 	--ocbe-font-size: 14px;
 	--ocbe-line-height: 1.6;
 	--ocbe-max-height: 400px;
-	--ocbe-gutter-bg: var(--ocbe-code-bg);
 	--ocbe-gutter-color: var(--text-faint);
 	--ocbe-scrollbar-thumb: var(--scrollbar-thumb-bg);
 	--ocbe-scrollbar-thumb-hover: var(--interactive-accent);
 	--ocbe-scrollbar-track: transparent;
-	--ocbe-state-layer: rgb(128 128 128 / 0.08);
-	--ocbe-state-layer-strong: rgb(128 128 128 / 0.16);
-	--ocbe-elevation-1: 0 1px 2px 0 rgb(0 0 0 / 0.06), 0 1px 3px 0 rgb(0 0 0 / 0.04);
-	--ocbe-elevation-2: 0 2px 6px 0 rgb(0 0 0 / 0.08), 0 1px 4px 0 rgb(0 0 0 / 0.04);
-	--ocbe-elevation-3: 0 6px 16px 0 rgb(0 0 0 / 0.12), 0 2px 8px 0 rgb(0 0 0 / 0.06);
+	--ocbe-copy-success-color: #2ea043;
 
 	/* ---- 布局 ---- */
 	margin: 1.4em 0;
@@ -49,20 +44,18 @@
 	font-size: var(--ocbe-font-size);
 	line-height: var(--ocbe-line-height);
 	position: relative;
-	transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
-	box-shadow: var(--ocbe-elevation-1);
+	transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-/* 悬停：轻微抬升 */
+/* 悬停：边框增强 */
 .ocbe-wrapper:hover {
-	box-shadow: var(--ocbe-elevation-2);
 	border-color: var(--ocbe-border-color-strong);
 }
 
-/* 选中态：主题色边框 + 阴影 */
+/* 选中态：主题色边框，粗细可配置 */
 .ocbe-wrapper.ocbe-selected {
 	border-color: var(--ocbe-selected-border);
-	box-shadow: 0 0 0 1px var(--ocbe-selected-border), var(--ocbe-elevation-2);
+	box-shadow: 0 0 0 var(--ocbe-selected-border-width) var(--ocbe-selected-border);
 }
 
 /* 嵌套在引用/列表中时缩小外边距 */
@@ -111,62 +104,88 @@ li .ocbe-wrapper {
 	flex: 0 0 auto;
 }
 
-/* ----- 通用图标按钮（折叠/菜单） ----- */
+/* ----- 通用按钮样式：无边框无背景，仅显示文字/图标，hover 时显示背景 -----
+ * 使用 .ocbe-wrapper 前缀提高选择器优先级 (0,2,0)，覆盖 Obsidian 主题的
+ * .markdown-rendered button (0,1,1) 等规则，确保按钮无边框无背景。
+ */
 
-.ocbe-toggle,
-.ocbe-menu {
+.ocbe-wrapper .ocbe-toggle,
+.ocbe-wrapper .ocbe-menu,
+.ocbe-wrapper .ocbe-copy {
 	flex: 0 0 auto;
-	width: 32px;
-	height: 32px;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	padding: 0;
 	background: transparent;
 	border: none;
-	border-radius: 50%;
+	box-shadow: none;
+	border-radius: var(--ocbe-radius-sm);
 	cursor: pointer;
 	color: var(--ocbe-text-muted);
-	transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+	transition: background 0.15s ease, color 0.15s ease;
 	position: relative;
 }
 
-.ocbe-toggle:hover,
-.ocbe-menu:hover {
-	background: var(--ocbe-state-layer);
+/* 图标按钮尺寸（折叠/菜单） */
+.ocbe-wrapper .ocbe-toggle,
+.ocbe-wrapper .ocbe-menu {
+	width: 32px;
+	height: 32px;
+}
+
+/* 复制按钮尺寸 */
+.ocbe-wrapper .ocbe-copy {
+	height: 30px;
+	padding: 0 12px;
+	gap: 6px;
+	font-size: 0.78em;
+	font-weight: 500;
+	letter-spacing: 0.02em;
+}
+
+/* hover：使用用户可配置的 hover 背景色 */
+.ocbe-wrapper .ocbe-toggle:hover,
+.ocbe-wrapper .ocbe-menu:hover,
+.ocbe-wrapper .ocbe-copy:hover {
+	background: var(--ocbe-hover-bg);
 	color: var(--ocbe-text-color);
 }
 
-.ocbe-toggle:active,
-.ocbe-menu:active {
-	background: var(--ocbe-state-layer-strong);
-	transform: scale(0.94);
+.ocbe-wrapper .ocbe-toggle:active,
+.ocbe-wrapper .ocbe-menu:active,
+.ocbe-wrapper .ocbe-copy:active {
+	background: var(--ocbe-hover-bg);
+	color: var(--ocbe-text-color);
 }
 
-.ocbe-toggle:focus-visible,
-.ocbe-menu:focus-visible {
+.ocbe-wrapper .ocbe-toggle:focus-visible,
+.ocbe-wrapper .ocbe-menu:focus-visible,
+.ocbe-wrapper .ocbe-copy:focus-visible {
 	outline: 2px solid var(--ocbe-selected-border);
 	outline-offset: 2px;
 }
 
-/* ----- 折叠图标（CSS 三角形） ----- */
+/* ----- 折叠图标（SVG chevron，展开时旋转 90 度） ----- */
 
 .ocbe-toggle-icon {
-	display: inline-block;
-	width: 0;
-	height: 0;
-	border-style: solid;
-	border-width: 5px 0 5px 8px;
-	border-color: transparent transparent transparent currentColor;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 0;
+}
+
+.ocbe-toggle-icon svg {
+	display: block;
 	transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 	transform-origin: 50% 50%;
 }
 
-.ocbe-wrapper[data-state='expanded'] .ocbe-toggle-icon {
+.ocbe-wrapper[data-state='expanded'] .ocbe-toggle-icon svg {
 	transform: rotate(90deg);
 }
 
-.ocbe-wrapper[data-state='collapsed'] .ocbe-toggle-icon {
+.ocbe-wrapper[data-state='collapsed'] .ocbe-toggle-icon svg {
 	transform: rotate(0deg);
 }
 
@@ -199,64 +218,40 @@ li .ocbe-wrapper {
 	font-weight: 600;
 	color: var(--ocbe-text-muted);
 	padding: 3px 10px;
-	background: var(--ocbe-state-layer);
+	background: var(--ocbe-hover-bg);
 	border-radius: 999px;
 	text-transform: lowercase;
 	letter-spacing: 0.04em;
 	line-height: 1.4;
 }
 
-/* ----- 复制按钮（轮廓按钮，MD3 Outlined Button 风格） ----- */
-
-.ocbe-copy {
-	flex: 0 0 auto;
-	height: 30px;
-	padding: 0 14px;
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	background: transparent;
-	border: 1px solid var(--ocbe-border-color);
-	border-radius: var(--ocbe-radius-sm);
-	cursor: pointer;
-	color: var(--ocbe-text-muted);
-	font-size: 0.78em;
-	font-weight: 500;
-	letter-spacing: 0.02em;
-	transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-
-.ocbe-copy:hover {
-	background: var(--ocbe-state-layer);
-	color: var(--ocbe-text-color);
-	border-color: var(--ocbe-border-color-strong);
-}
-
-.ocbe-copy:active {
-	background: var(--ocbe-state-layer-strong);
-}
-
-.ocbe-copy:focus-visible {
-	outline: 2px solid var(--ocbe-selected-border);
-	outline-offset: 2px;
-}
+/* ----- 复制按钮文本 ----- */
 
 .ocbe-copy-icon {
 	display: inline-block;
 	line-height: 1;
 }
 
-/* ----- 三点菜单图标（三个垂直圆点） ----- */
+/* 复制成功状态：使用用户配置的成功颜色 */
+.ocbe-wrapper .ocbe-copy[data-copied='1'] {
+	color: var(--ocbe-copy-success-color);
+}
+
+.ocbe-wrapper .ocbe-copy[data-copied='1']:hover {
+	background: var(--ocbe-hover-bg);
+}
+
+/* ----- 三点菜单图标（SVG） ----- */
 
 .ocbe-menu-icon {
-	display: inline-block;
-	width: 16px;
-	height: 16px;
-	background:
-		radial-gradient(circle at 50% 25%, currentColor 1.6px, transparent 2.2px),
-		radial-gradient(circle at 50% 50%, currentColor 1.6px, transparent 2.2px),
-		radial-gradient(circle at 50% 75%, currentColor 1.6px, transparent 2.2px);
-	background-repeat: no-repeat;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 0;
+}
+
+.ocbe-menu-icon svg {
+	display: block;
 }
 
 /* ========== 代码区 Body ========== */
@@ -273,18 +268,23 @@ li .ocbe-wrapper {
 	display: none;
 }
 
-/* ----- 行号 Gutter ----- */
-
+/* ----- 行号 Gutter -----
+ * 关键：gutter font-size 是 0.88em，需用 calc(var(--ocbe-line-height) / 0.88)
+ * 保证每行像素高度与 code 区一致，避免错位。
+ * gutter 设 max-height + overflow: hidden，并通过 JS 同步滚动。
+ */
 .ocbe-gutter {
 	flex: 0 0 auto;
 	min-width: 3em;
+	max-height: var(--ocbe-max-height);
 	padding: 14px 12px 14px 16px;
-	background: var(--ocbe-gutter-bg);
+	background: var(--ocbe-header-bg);
 	color: var(--ocbe-gutter-color);
 	text-align: right;
 	user-select: none;
+	overflow: hidden;
 	font-size: 0.88em;
-	line-height: var(--ocbe-line-height);
+	line-height: calc(var(--ocbe-line-height) / 0.88);
 	font-variant-numeric: tabular-nums;
 	border-right: 1px solid var(--ocbe-border-color);
 }
@@ -301,11 +301,13 @@ li .ocbe-wrapper {
 	overflow: auto;
 	max-height: var(--ocbe-max-height);
 	padding: 14px 18px;
-	background: var(--ocbe-code-bg);
+	background: transparent;
 }
 
-/* ----- Pre / Code ----- */
-
+/* ----- Pre / Code -----
+ * white-space: pre 保留换行与空格，内容超出时触发横向滚动。
+ * 背景色由 wrapper 的 --ocbe-code-bg 控制。
+ */
 .ocbe-code {
 	margin: 0;
 	padding: 0;
@@ -315,16 +317,19 @@ li .ocbe-wrapper {
 	white-space: pre;
 	border: none !important;
 	border-radius: 0 !important;
+	/* 让 pre 宽度由内容决定，超出 scroller 时触发横向滚动 */
+	width: max-content;
+	min-width: 100%;
 }
 
 .ocbe-code code {
-	font-family: inherit;
+	font-family: var(--font-monospace);
 	font-size: inherit;
 	background: transparent !important;
 	padding: 0 !important;
 	border: none !important;
 	border-radius: 0 !important;
-	color: var(--ocbe-text-color);
+	color: var(--text-normal);
 	line-height: inherit;
 }
 
@@ -379,19 +384,17 @@ li .ocbe-wrapper {
 	border: 2px solid transparent;
 }
 
-/* ========== 三点菜单面板 ========== */
+/* ========== 三点菜单面板（fixed 定位，避免被裁剪） ========== */
 
 .ocbe-menu-panel {
-	position: absolute;
-	top: calc(var(--ocbe-header-h) + 4px);
-	right: 6px;
-	z-index: 50;
+	position: fixed;
+	z-index: 1000;
 	min-width: 180px;
 	padding: 6px;
 	background: var(--background-primary);
 	border: 1px solid var(--ocbe-border-color);
 	border-radius: var(--ocbe-radius-sm);
-	box-shadow: var(--ocbe-elevation-3);
+	box-shadow: 0 6px 16px 0 rgb(0 0 0 / 0.12), 0 2px 8px 0 rgb(0 0 0 / 0.06);
 	animation: ocbe-menu-in 0.14s cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -414,7 +417,7 @@ li .ocbe-wrapper {
 	padding: 8px 14px;
 	background: transparent;
 	border: none;
-	border-radius: 6px;
+	border-radius: var(--ocbe-radius-sm);
 	cursor: pointer;
 	color: var(--ocbe-text-color);
 	font-size: 0.88em;
@@ -423,11 +426,7 @@ li .ocbe-wrapper {
 }
 
 .ocbe-menu-item:hover {
-	background: var(--ocbe-state-layer);
-}
-
-.ocbe-menu-item:active {
-	background: var(--ocbe-state-layer-strong);
+	background: var(--ocbe-hover-bg);
 }
 
 .ocbe-menu-item:focus-visible {
@@ -446,13 +445,13 @@ li .ocbe-wrapper {
 
 @media (hover: none) and (pointer: coarse) {
 
-	.ocbe-toggle,
-	.ocbe-menu {
+	.ocbe-wrapper .ocbe-toggle,
+	.ocbe-wrapper .ocbe-menu {
 		width: 40px;
 		height: 40px;
 	}
 
-	.ocbe-copy {
+	.ocbe-wrapper .ocbe-copy {
 		height: 38px;
 		padding: 0 16px;
 		font-size: 0.85em;
@@ -496,6 +495,10 @@ li .ocbe-wrapper {
 		max-height: none;
 		overflow: visible;
 	}
+
+	.ocbe-gutter {
+		max-height: none;
+	}
 }
 
 /* ========== 模态框：创建/编辑代码块 ========== */
@@ -508,7 +511,7 @@ li .ocbe-wrapper {
 	font-size: 13px;
 	line-height: 1.55;
 	padding: 10px 12px;
-	border-radius: 8px;
+	border-radius: var(--radius-s, 6px);
 	border: 1px solid var(--background-modifier-border);
 	background: var(--background-primary);
 	color: var(--text-normal);
@@ -529,9 +532,8 @@ li .ocbe-wrapper {
 
 /* ========== 模态框：代码全屏查看 ========== */
 
+/* modalEl 上直接设置 max-width/max-height，无需额外 CSS 规则 */
 .ocbe-viewer-modal .modal-content {
-	max-width: 90vw;
-	max-height: 85vh;
 	display: flex;
 	flex-direction: column;
 }
@@ -564,19 +566,22 @@ li .ocbe-wrapper {
 	align-items: center;
 	gap: 6px;
 	background: transparent;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 8px;
+	border: none;
+	border-radius: var(--radius-s, 6px);
 	cursor: pointer;
 	color: var(--text-muted);
 	font-size: 0.85em;
 	font-weight: 500;
-	transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+	transition: background 0.15s ease, color 0.15s ease;
 }
 
 .ocbe-viewer-modal .ocbe-viewer-copy:hover {
 	background: var(--background-modifier-hover);
 	color: var(--text-normal);
-	border-color: var(--interactive-accent);
+}
+
+.ocbe-viewer-modal .ocbe-viewer-copy[data-copied='1'] {
+	color: var(--ocbe-copy-success-color, #2ea043);
 }
 
 .ocbe-viewer-modal .ocbe-viewer-scroller {
@@ -586,7 +591,10 @@ li .ocbe-wrapper {
 	min-height: 0;
 	padding: 14px 18px;
 	background: var(--background-secondary);
-	border-radius: 8px;
+	border-radius: var(--radius-s, 6px);
+	/* 确保代码可鼠标选择复制 */
+	user-select: text;
+	-webkit-user-select: text;
 }
 
 .ocbe-viewer-modal .ocbe-viewer-code {
@@ -599,6 +607,8 @@ li .ocbe-wrapper {
 	white-space: pre;
 	border: none !important;
 	border-radius: 0 !important;
+	width: max-content;
+	min-width: 100%;
 }
 
 .ocbe-viewer-modal .ocbe-viewer-code code {
@@ -640,16 +650,6 @@ li .ocbe-wrapper {
 	display: flex;
 	justify-content: flex-end;
 	gap: 8px;
-}
-
-/* ========== 暗色主题微调 ========== */
-
-.theme-dark .ocbe-wrapper {
-	--ocbe-state-layer: rgb(255 255 255 / 0.06);
-	--ocbe-state-layer-strong: rgb(255 255 255 / 0.12);
-	--ocbe-elevation-1: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 1px 3px 0 rgb(0 0 0 / 0.3);
-	--ocbe-elevation-2: 0 2px 6px 0 rgb(0 0 0 / 0.5), 0 1px 4px 0 rgb(0 0 0 / 0.3);
-	--ocbe-elevation-3: 0 6px 16px 0 rgb(0 0 0 / 0.6), 0 2px 8px 0 rgb(0 0 0 / 0.4);
 }
 
 /* ========== 阅读视图内边距修正 ========== */

@@ -10,6 +10,11 @@
  * - 自动跳过用户在 excludeLanguages 中配置的语言
  * - 已包裹的 <pre>（重渲染场景）会被跳过，避免重复处理
  * - 主题完全跟随 Obsidian 当前主题（亮/暗）
+ *
+ * Title 串扰 bug 修复：
+ * - 不再使用 fenceInfos[idx] 索引匹配（el 可能只包含 section 子集，索引会错位）
+ * - 改用内容匹配：对每个 <pre>，比较 textContent 与 fence source
+ * - 使用 Set<number> 跟踪已消费 fence，避免重复匹配
  */
 
 import { Notice, type Plugin } from 'obsidian';
@@ -110,6 +115,63 @@ function findFencesInSection(
     return results;
 }
 
+/**
+ * 规范化文本用于比较：
+ * - 统一换行符为 \n
+ * - 去除末尾换行
+ * - 去除首部空白行
+ * 这样 <pre>.textContent 与 fence source 可比较。
+ */
+function normalizeForCompare(s: string): string {
+    return s.replace(/\r\n?/g, '\n').replace(/^\n+/, '').replace(/\n+$/, '');
+}
+
+/**
+ * 在 fenceInfos 中找到与 pre 文本内容匹配的项。
+ * 使用 consumed Set 跟踪已消费的 fence，避免重复匹配相同内容的代码块。
+ * 返回索引，未找到返回 -1。
+ */
+function findMatchingFence(
+    preText: string,
+    fenceInfos: FenceInfo[],
+    consumed: Set<number>,
+): number {
+    const normalizedPre = normalizeForCompare(preText);
+    if (normalizedPre === '') {
+        // 空代码块：找第一个未消费的空 source fence
+        for (let i = 0; i < fenceInfos.length; i++) {
+            if (consumed.has(i)) continue;
+            const src = fenceInfos[i]?.source ?? '';
+            if (normalizeForCompare(src) === '') {
+                return i;
+            }
+        }
+        return -1;
+    }
+    // 优先完全匹配
+    for (let i = 0; i < fenceInfos.length; i++) {
+        if (consumed.has(i)) continue;
+        const src = fenceInfos[i]?.source ?? '';
+        if (normalizeForCompare(src) === normalizedPre) {
+            return i;
+        }
+    }
+    // 容错：pre 文本可能被 Obsidian 进一步处理（如去除缩进），用 includes 反向匹配
+    for (let i = 0; i < fenceInfos.length; i++) {
+        if (consumed.has(i)) continue;
+        const src = fenceInfos[i]?.source ?? '';
+        const normalizedSrc = normalizeForCompare(src);
+        if (
+            normalizedSrc !== '' &&
+            (normalizedPre.includes(normalizedSrc) ||
+                normalizedSrc.includes(normalizedPre))
+        ) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 /** 注册代码块后处理器 */
 export function registerCodeBlockPostProcessor(plugin: PluginLike): void {
     plugin.registerMarkdownPostProcessor((el, ctx) => {
@@ -123,11 +185,12 @@ export function registerCodeBlockPostProcessor(plugin: PluginLike): void {
         const fenceInfos: FenceInfo[] = sectionInfo
             ? findFencesInSection(sectionInfo.text)
             : [];
+        const consumed = new Set<number>();
 
         const settings = plugin.settings;
         const isDark = isObsidianDark();
 
-        pres.forEach((pre, idx) => {
+        pres.forEach((pre) => {
             // 已包裹（重渲染）则跳过
             if (pre.closest('.' + CSS_CLASS.wrapper)) {
                 return;
@@ -138,19 +201,23 @@ export function registerCodeBlockPostProcessor(plugin: PluginLike): void {
                 return;
             }
 
-            // 与 fence 信息匹配
+            // 与 fence 信息匹配（用内容匹配，避免索引错位）
             let lang = langFromDom;
             let title = '';
             let source = pre.textContent || '';
 
-            const info = fenceInfos[idx];
-            if (info) {
-                // 优先使用 fence 中的语言（更准确，包含未识别的语言）
-                if (info.meta.lang) {
-                    lang = info.meta.lang;
+            const matchIdx = findMatchingFence(source, fenceInfos, consumed);
+            if (matchIdx >= 0) {
+                const info = fenceInfos[matchIdx];
+                consumed.add(matchIdx);
+                if (info) {
+                    // 优先使用 fence 中的语言（更准确，包含未识别的语言）
+                    if (info.meta.lang) {
+                        lang = info.meta.lang;
+                    }
+                    title = info.meta.title;
+                    source = info.source;
                 }
-                title = info.meta.title;
-                source = info.source;
             }
 
             // 二次校验：fence 中的语言可能也是排除项

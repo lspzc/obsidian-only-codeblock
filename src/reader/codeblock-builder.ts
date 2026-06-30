@@ -70,23 +70,41 @@ function highlightCode(processedSource: string, lang: string): string {
     }
 }
 
+/** 折叠图标 SVG（chevron-right，展开时旋转 90 度） */
+const TOGGLE_ICON_SVG =
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>';
+
+/** 三点菜单图标 SVG */
+const MENU_ICON_SVG =
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg>';
+
 /** 将用户设置写入 wrapper 的内联 CSS 变量 */
-function applyCssVariables(
+export function applyCssVariables(
     wrapper: HTMLElement,
     settings: OnlyCodeblockSettings,
     isDark: boolean,
 ): void {
     const headerBg = isDark ? settings.headerBgDark : settings.headerBgLight;
     const codeBg = isDark ? settings.codeBgDark : settings.codeBgLight;
+    const hoverBg = isDark ? settings.hoverBgDark : settings.hoverBgLight;
+    const copySuccessColor = isDark
+        ? settings.copySuccessColorDark
+        : settings.copySuccessColorLight;
     const fontSize =
         settings.fontSizeMode === 'custom'
             ? `${settings.customFontSize}px`
             : 'inherit';
     wrapper.style.setProperty('--ocbe-header-bg', headerBg);
     wrapper.style.setProperty('--ocbe-code-bg', codeBg);
+    wrapper.style.setProperty('--ocbe-hover-bg', hoverBg);
     wrapper.style.setProperty('--ocbe-font-size', fontSize);
+    wrapper.style.setProperty('--ocbe-copy-success-color', copySuccessColor);
+    wrapper.style.setProperty(
+        '--ocbe-selected-border-width',
+        `${settings.selectedBorderWidth}px`,
+    );
+
     // 高度限制：根据方案计算 max-height
-    const maxLineHeight = '1.6';
     let maxHeight = 'none';
     if (settings.heightLimitMode === 'px' && settings.maxBlockHeightPx > 0) {
         maxHeight = `${settings.maxBlockHeightPx}px`;
@@ -94,12 +112,12 @@ function applyCssVariables(
         settings.heightLimitMode === 'lines' &&
         settings.maxBlockHeightLines > 0
     ) {
-        // 行高 1.6em + 上下 padding 24px，估算最大高度
-        const linePx = settings.maxBlockHeightLines * 1.6 * (settings.customFontSize || 14);
-        maxHeight = `${linePx + 24}px`;
-        wrapper.style.setProperty('--ocbe-line-height', maxLineHeight);
+        // 用 calc 计算：行数 * 行高 * 1em + 上下 padding (28px)
+        // 1em = var(--ocbe-font-size)，自动适应字号
+        maxHeight = `calc(${settings.maxBlockHeightLines} * var(--ocbe-line-height) * 1em + 28px)`;
     }
     wrapper.style.setProperty('--ocbe-max-height', maxHeight);
+
     if (settings.selectedBorderColor) {
         wrapper.style.setProperty(
             '--ocbe-selected-border',
@@ -114,13 +132,13 @@ function applyCssVariables(
  *   <div.ocbe-wrapper data-state="expanded|collapsed">
  *     <div.ocbe-header>
  *       <div.ocbe-header-left>
- *         <button.ocbe-toggle><span.ocbe-toggle-icon></span></button>
+ *         <button.ocbe-toggle><span.ocbe-toggle-icon>SVG</span></button>
  *         <span.ocbe-title><span.ocbe-title-text>名称</span></span>
  *         <span.ocbe-lang>js</span>
  *       </div>
  *       <div.ocbe-header-right>
- *         <button.ocbe-copy><span.ocbe-copy-icon></span></button>
- *         <button.ocbe-menu><span.ocbe-menu-icon></span></button>
+ *         <button.ocbe-copy><span.ocbe-copy-icon>文本</span></button>
+ *         <button.ocbe-menu><span.ocbe-menu-icon>SVG</span></button>
  *       </div>
  *     </div>
  *     <div.ocbe-body>
@@ -164,6 +182,8 @@ export function buildCodeBlockWrapper(opts: BuildCodeBlockOptions): HTMLElement 
     toggle.setAttribute('aria-expanded', String(!settings.defaultFolded));
     const toggleIcon = activeDocument.createElement('span');
     toggleIcon.classList.add(CSS_CLASS.toggleIcon);
+    // eslint-disable-next-line no-unsanitized/property, @microsoft/sdl/no-inner-html -- 静态 SVG 字符串，无用户输入
+    toggleIcon.innerHTML = TOGGLE_ICON_SVG;
     toggle.appendChild(toggleIcon);
     headerLeft.appendChild(toggle);
 
@@ -198,7 +218,7 @@ export function buildCodeBlockWrapper(opts: BuildCodeBlockOptions): HTMLElement 
     copyBtn.setAttribute('title', '复制代码');
     const copyIcon = activeDocument.createElement('span');
     copyIcon.classList.add(CSS_CLASS.copyIcon);
-    copyIcon.textContent = '复制';
+    copyIcon.textContent = settings.copyButtonText || '复制';
     copyBtn.appendChild(copyIcon);
     headerRight.appendChild(copyBtn);
 
@@ -209,6 +229,8 @@ export function buildCodeBlockWrapper(opts: BuildCodeBlockOptions): HTMLElement 
     menuBtn.setAttribute('title', '更多操作');
     const menuIcon = activeDocument.createElement('span');
     menuIcon.classList.add(CSS_CLASS.menuIcon);
+    // eslint-disable-next-line no-unsanitized/property, @microsoft/sdl/no-inner-html -- 静态 SVG 字符串，无用户输入
+    menuIcon.innerHTML = MENU_ICON_SVG;
     menuBtn.appendChild(menuIcon);
     headerRight.appendChild(menuBtn);
 
@@ -239,13 +261,19 @@ export function buildCodeBlockWrapper(opts: BuildCodeBlockOptions): HTMLElement 
 
     // 行号 gutter：根据源码行数生成
     if (gutter) {
+        const gutterEl = gutter;
         const gutterFrag = activeDocument.createDocumentFragment();
         for (let i = 1; i <= lineCount; i++) {
             const num = activeDocument.createElement('span');
             num.textContent = String(i);
             gutterFrag.appendChild(num);
         }
-        gutter.appendChild(gutterFrag);
+        gutterEl.appendChild(gutterFrag);
+
+        // 同步滚动：gutter 跟随 scroller 垂直滚动
+        scroller.addEventListener('scroll', () => {
+            gutterEl.scrollTop = scroller.scrollTop;
+        });
     }
 
     // 代码内容：直接使用 Prism 高亮输出，依靠 white-space: pre 渲染换行
@@ -281,13 +309,13 @@ function wireInteractions(
     // 复制
     copyBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        void handleCopy(copyBtn, source, onCopy);
+        void handleCopy(copyBtn, source, settings, onCopy);
     });
 
     // 三点菜单
     menuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        openMenu(wrapper, menuBtn, source, title, settings, onCopy);
+        openMenu(wrapper, menuBtn, source, title, settings);
     });
 
     // 点击代码区切换"选中"状态（互斥：同一时间只有一个代码块高亮）
@@ -342,6 +370,7 @@ function clearAllSelected(currentWrapper: HTMLElement): void {
 async function handleCopy(
     copyBtn: HTMLButtonElement,
     source: string,
+    settings: OnlyCodeblockSettings,
     onCopy?: () => void,
 ): Promise<void> {
     let ok = false;
@@ -369,25 +398,26 @@ async function handleCopy(
         const icon = copyBtn.querySelector('.' + CSS_CLASS.copyIcon);
         if (icon) {
             const original = icon.textContent;
-            icon.textContent = '已复制';
+            icon.textContent = settings.copySuccessText || '已复制';
+            copyBtn.dataset.copied = '1';
             window.setTimeout(() => {
                 icon.textContent = original;
+                delete copyBtn.dataset.copied;
             }, 1200);
         }
     }
 }
 
-/** 打开三点菜单 */
+/** 打开三点菜单（使用 fixed 定位，避免被 wrapper overflow:hidden 裁剪） */
 function openMenu(
     wrapper: HTMLElement,
     menuBtn: HTMLButtonElement,
     source: string,
     title: string,
     settings: OnlyCodeblockSettings,
-    onCopy?: () => void,
 ): void {
     // 已存在则关闭
-    const existing = wrapper.querySelector('.' + CSS_CLASS.menuPanel);
+    const existing = activeDocument.querySelector('.' + CSS_CLASS.menuPanel);
     if (existing) {
         existing.remove();
         return;
@@ -415,33 +445,35 @@ function openMenu(
 
     // 在新窗格中打开代码
     const openViewer = createMenuItem('在新窗口中查看', () => {
-        showCodeViewerModal(source, title, wrapper.dataset.lang || 'text');
+        showCodeViewerModal(source, title, wrapper.dataset.lang || 'text', settings);
         panel.remove();
     });
     panel.appendChild(openViewer);
 
     // 导出为文件
     const exportItem = createMenuItem('导出为文件', () => {
-        showExportModal(source, title, wrapper.dataset.lang || 'text');
+        void showExportModal(source, title, wrapper.dataset.lang || 'text', settings);
         panel.remove();
     });
     panel.appendChild(exportItem);
 
-    // 分隔线
-    panel.appendChild(createMenuDivider());
+    // 使用 fixed 定位：append 到 body，避免被折叠 wrapper 的 overflow:hidden 裁剪
+    activeDocument.body.appendChild(panel);
 
-    // 复制代码（菜单内入口）
-    const copyItem = createMenuItem('复制代码', () => {
-        void handleCopy(
-            menuBtn.parentElement?.querySelector('.' + CSS_CLASS.copy) as HTMLButtonElement,
-            source,
-            onCopy,
-        );
-        panel.remove();
-    });
-    panel.appendChild(copyItem);
-
-    menuBtn.parentElement?.appendChild(panel);
+    // 根据 menuBtn 的位置计算 panel 定位
+    const rect = menuBtn.getBoundingClientRect();
+    const panelWidth = panel.offsetWidth;
+    const panelHeight = panel.offsetHeight;
+    let left = rect.right - panelWidth;
+    let top = rect.bottom + 4;
+    // 防止超出视口
+    if (left < 8) left = 8;
+    if (top + panelHeight > window.innerHeight - 8) {
+        top = rect.top - panelHeight - 4;
+        if (top < 8) top = 8;
+    }
+    panel.style.left = `${left}px`;
+    panel.style.top = `${top}px`;
 
     // 点击外部关闭
     window.setTimeout(() => {

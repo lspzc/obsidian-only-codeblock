@@ -63,12 +63,18 @@ export interface OnlyCodeblockSettings {
 	headerBgLight: string;
 	/** 装饰条背景色（暗色，十六进制） */
 	headerBgDark: string;
-	/** 代码区背景色（亮色，十六进制） */
+	/** 代码块背景色（亮色，十六进制） */
 	codeBgLight: string;
-	/** 代码区背景色（暗色，十六进制） */
+	/** 代码块背景色（暗色，十六进制） */
 	codeBgDark: string;
+	/** 按钮 hover 背景色（亮色，十六进制） */
+	hoverBgLight: string;
+	/** 按钮 hover 背景色（暗色，十六进制） */
+	hoverBgDark: string;
 	/** 选中边框颜色（十六进制，留空使用 Obsidian 主题色） */
 	selectedBorderColor: string;
+	/** 选中边框粗细 (px)，范围 0~2，步长 0.1 */
+	selectedBorderWidth: number;
 
 	/* ---------- 滚动条 ---------- */
 	/** 滚动条显示策略 */
@@ -83,4 +89,28 @@ export interface OnlyCodeblockSettings {
 	/* ---------- 复制 ---------- */
 	/** 复制成功显示 Notice */
 	showCopyNotice: boolean;
+	/** 复制按钮文本 */
+	copyButtonText: string;
+	/** 复制成功后按钮显示的文本 */
+	copySuccessText: string;
+	/** 复制成功文本颜色（亮色主题，十六进制） */
+	copySuccessColorLight: string;
+	/** 复制成功文本颜色（暗色主题，十六进制） */
+	copySuccessColorDark: string;
+
+	/* ---------- 导出 ---------- */
+	/** 导出文件的默认文件夹路径（vault 内相对路径，留空时弹框中必须填写） */
+	exportPath: string;
+
+	/* ---------- 查看器 ---------- */
+	/** 新窗口查看弹框最大宽度 (px) */
+	viewerMaxWidth: number;
+	/** 新窗口查看弹框最大高度 (px) */
+	viewerMaxHeight: number;
+
+	/* ---------- 侧边栏 ---------- */
+	/** 在左侧栏显示"新增代码块"按钮 */
+	showAddRibbon: boolean;
+	/** 在左侧栏显示"编辑代码块"按钮 */
+	showEditRibbon: boolean;
 }
