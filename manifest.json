@@ -2,7 +2,7 @@
 	"id": "obsidian-only-codeblock",
 	"name": "Only Codeblock",
 	"version": "0.1.0",
-	"minAppVersion": "1.4.16",
+	"minAppVersion": "1.7.2",
 	"description": "增强 Obsidian 代码块的样式与功能（参考语雀风格，仅在阅读视图生效）",
 	"author": "lsp_z",
 	"authorUrl": "https://github.com/",

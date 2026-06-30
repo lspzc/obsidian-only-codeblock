@@ -100,14 +100,17 @@ export const DEFAULT_SETTINGS: OnlyCodeblockSettings = {
     customFontSize: 14,
     showLineNumbers: false,
     showLangLabel: true,
+    defaultLangLabel: 'default',
     headerBgLight: '#f5f5f5',
     headerBgDark: '#2d2d2f',
     codeBgLight: '#ffffff',
     codeBgDark: '#232323',
+    gutterBgLight: '#ffffff',
+    gutterBgDark: '#232323',
     hoverBgLight: '#e3e5e4',
     hoverBgDark: '#424245',
     selectedBorderColor: '',
-    selectedBorderWidth: 1,
+    selectedBorderWidth: 0.1,
 
     // 滚动条
     scrollbarMode: 'hover',
@@ -117,8 +120,8 @@ export const DEFAULT_SETTINGS: OnlyCodeblockSettings = {
 
     // 复制
     showCopyNotice: true,
-    copyButtonText: '复制',
-    copySuccessText: '已复制',
+    copyButtonText: '点击复制',
+    copySuccessText: '复制成功',
     copySuccessColorLight: '#2ea043',
     copySuccessColorDark: '#3fb950',
 
@@ -126,8 +129,7 @@ export const DEFAULT_SETTINGS: OnlyCodeblockSettings = {
     exportPath: '',
 
     // 查看器
-    viewerMaxWidth: 1000,
-    viewerMaxHeight: 700,
+    viewerTabMode: 'reuse',
 
     // 侧边栏
     showAddRibbon: true,

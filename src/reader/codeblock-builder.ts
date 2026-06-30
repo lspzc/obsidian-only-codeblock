@@ -7,7 +7,7 @@
 
 import { CSS_CLASS } from '../constants';
 import type { OnlyCodeblockSettings } from '../types';
-import { showCodeViewerModal } from '../ui/code-viewer-modal';
+import { openCodeViewerTab } from '../ui/code-viewer-view';
 import { showExportModal } from '../ui/export-modal';
 
 export interface BuildCodeBlockOptions {
@@ -86,6 +86,7 @@ export function applyCssVariables(
 ): void {
     const headerBg = isDark ? settings.headerBgDark : settings.headerBgLight;
     const codeBg = isDark ? settings.codeBgDark : settings.codeBgLight;
+    const gutterBg = isDark ? settings.gutterBgDark : settings.gutterBgLight;
     const hoverBg = isDark ? settings.hoverBgDark : settings.hoverBgLight;
     const copySuccessColor = isDark
         ? settings.copySuccessColorDark
@@ -96,6 +97,7 @@ export function applyCssVariables(
             : 'inherit';
     wrapper.style.setProperty('--ocbe-header-bg', headerBg);
     wrapper.style.setProperty('--ocbe-code-bg', codeBg);
+    wrapper.style.setProperty('--ocbe-gutter-bg', gutterBg);
     wrapper.style.setProperty('--ocbe-hover-bg', hoverBg);
     wrapper.style.setProperty('--ocbe-font-size', fontSize);
     wrapper.style.setProperty('--ocbe-copy-success-color', copySuccessColor);
@@ -199,10 +201,16 @@ export function buildCodeBlockWrapper(opts: BuildCodeBlockOptions): HTMLElement 
     }
     headerLeft.appendChild(titleEl);
 
-    if (settings.showLangLabel && lang) {
+    if (settings.showLangLabel) {
         const langEl = activeDocument.createElement('span');
-        langEl.classList.add(CSS_CLASS.langLabel);
-        langEl.textContent = lang;
+        // 复用 Obsidian 内联标签 pill 样式（.tag）
+        langEl.classList.add(CSS_CLASS.langLabel, 'tag');
+        // 无语言或 text 时显示默认语言标签文本
+        const label =
+            lang && lang !== 'text'
+                ? lang
+                : settings.defaultLangLabel || 'default';
+        langEl.textContent = label;
         headerLeft.appendChild(langEl);
     }
 
@@ -218,7 +226,7 @@ export function buildCodeBlockWrapper(opts: BuildCodeBlockOptions): HTMLElement 
     copyBtn.setAttribute('title', '复制代码');
     const copyIcon = activeDocument.createElement('span');
     copyIcon.classList.add(CSS_CLASS.copyIcon);
-    copyIcon.textContent = settings.copyButtonText || '复制';
+    copyIcon.textContent = settings.copyButtonText || '点击复制';
     copyBtn.appendChild(copyIcon);
     headerRight.appendChild(copyBtn);
 
@@ -398,7 +406,7 @@ async function handleCopy(
         const icon = copyBtn.querySelector('.' + CSS_CLASS.copyIcon);
         if (icon) {
             const original = icon.textContent;
-            icon.textContent = settings.copySuccessText || '已复制';
+            icon.textContent = settings.copySuccessText || '复制成功';
             copyBtn.dataset.copied = '1';
             window.setTimeout(() => {
                 icon.textContent = original;
@@ -443,9 +451,9 @@ function openMenu(
     // 分隔线
     panel.appendChild(createMenuDivider());
 
-    // 在新窗格中打开代码
-    const openViewer = createMenuItem('在新窗口中查看', () => {
-        showCodeViewerModal(source, title, wrapper.dataset.lang || 'text', settings);
+    // 在新页签中打开代码
+    const openViewer = createMenuItem('在新页签中查看', () => {
+        openCodeViewerTab(source, title, wrapper.dataset.lang || 'text', settings);
         panel.remove();
     });
     panel.appendChild(openViewer);

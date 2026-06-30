@@ -14,6 +14,9 @@ export type CollapseState = 'expanded' | 'collapsed';
 /** 高度限制方案（与具体数值互斥） */
 export type HeightLimitMode = 'px' | 'lines' | 'none';
 
+/** 查看页签行为：复用同一个页签 / 每次新建页签 */
+export type ViewerTabMode = 'reuse' | 'new';
+
 /** 代码块元信息（从 fence 解析得到） */
 export interface CodeFenceMeta {
 	/** 语言标识（小写，空时为 'text'） */
@@ -59,6 +62,8 @@ export interface OnlyCodeblockSettings {
 	showLineNumbers: boolean;
 	/** 装饰条显示语言标签 */
 	showLangLabel: boolean;
+	/** 默认语言标签文本（当代码块未指定语言时显示） */
+	defaultLangLabel: string;
 	/** 装饰条背景色（亮色，十六进制） */
 	headerBgLight: string;
 	/** 装饰条背景色（暗色，十六进制） */
@@ -67,13 +72,17 @@ export interface OnlyCodeblockSettings {
 	codeBgLight: string;
 	/** 代码块背景色（暗色，十六进制） */
 	codeBgDark: string;
+	/** 行号背景色（亮色，十六进制） */
+	gutterBgLight: string;
+	/** 行号背景色（暗色，十六进制） */
+	gutterBgDark: string;
 	/** 按钮 hover 背景色（亮色，十六进制） */
 	hoverBgLight: string;
 	/** 按钮 hover 背景色（暗色，十六进制） */
 	hoverBgDark: string;
 	/** 选中边框颜色（十六进制，留空使用 Obsidian 主题色） */
 	selectedBorderColor: string;
-	/** 选中边框粗细 (px)，范围 0~2，步长 0.1 */
+	/** 选中边框粗细 (px)，范围 0~1，步长 0.1 */
 	selectedBorderWidth: number;
 
 	/* ---------- 滚动条 ---------- */
@@ -103,10 +112,8 @@ export interface OnlyCodeblockSettings {
 	exportPath: string;
 
 	/* ---------- 查看器 ---------- */
-	/** 新窗口查看弹框最大宽度 (px) */
-	viewerMaxWidth: number;
-	/** 新窗口查看弹框最大高度 (px) */
-	viewerMaxHeight: number;
+	/** 查看页签行为：复用同一个页签 / 每次新建页签 */
+	viewerTabMode: ViewerTabMode;
 
 	/* ---------- 侧边栏 ---------- */
 	/** 在左侧栏显示"新增代码块"按钮 */

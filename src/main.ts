@@ -22,6 +22,7 @@ import { applyCssVariables } from './reader/codeblock-builder';
 import { registerCodeBlockPostProcessor } from './reader/post-processor';
 import { OnlyCodeblockSettingTab } from './settings';
 import type { OnlyCodeblockSettings } from './types';
+import { CODE_VIEWER_VIEW_TYPE, CodeViewerView } from './ui/code-viewer-view';
 
 export default class OnlyCodeblock extends Plugin {
 	settings!: OnlyCodeblockSettings;
@@ -34,6 +35,9 @@ export default class OnlyCodeblock extends Plugin {
 
 		// 设置页签
 		this.addSettingTab(new OnlyCodeblockSettingTab(this.app, this));
+
+		// 注册代码查看页签视图
+		this.registerView(CODE_VIEWER_VIEW_TYPE, (leaf) => new CodeViewerView(leaf, this.settings));
 
 		// 阅读视图代码块后处理器
 		registerCodeBlockPostProcessor(this);
