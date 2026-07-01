@@ -408,10 +408,11 @@ async function handleCopy(
             const original = icon.textContent;
             icon.textContent = settings.copySuccessText || '复制成功';
             copyBtn.dataset.copied = '1';
+            const durationMs = (settings.copyNoticeDuration ?? 2) * 1000;
             window.setTimeout(() => {
                 icon.textContent = original;
                 delete copyBtn.dataset.copied;
-            }, 1200);
+            }, durationMs);
         }
     }
 }

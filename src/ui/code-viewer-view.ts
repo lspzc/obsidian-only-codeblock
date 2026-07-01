@@ -162,12 +162,13 @@ export class CodeViewerView extends ItemView {
             copyBtn.textContent = this.settings.copySuccessText || '复制成功';
             copyBtn.dataset.copied = '1';
             if (this.settings.showCopyNotice) {
-                new Notice('已复制代码');
+                new Notice('已复制代码', (this.settings.copyNoticeDuration ?? 2) * 1000);
             }
+            const durationMs = (this.settings.copyNoticeDuration ?? 2) * 1000;
             window.setTimeout(() => {
                 copyBtn.textContent = original;
                 delete copyBtn.dataset.copied;
-            }, 1200);
+            }, durationMs);
         } else {
             new Notice('复制失败');
         }

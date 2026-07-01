@@ -93,19 +93,25 @@ export default class OnlyCodeblock extends Plugin {
 		});
 	}
 
-	/** 重新渲染所有 Markdown 阅读视图，使设置变更实时生效 */
+	/**
+	 * 重新渲染所有 Markdown 阅读视图，使设置变更实时生效。
+	 *
+	 * 使用 leaf.openFile(file, state) 重新打开文件以强制完全重新渲染
+	 * （包括 MarkdownPostProcessor），同时保留当前视图状态（编辑/阅读模式、
+	 * 光标位置、滚动位置等）。
+	 *
+	 * 之前的 previewMode.rerender(true) 是未公开内部 API，在某些场景下
+	 * （如一键重置所有设置）会清空内容但不重新渲染，导致阅读视图空白。
+	 */
 	rerenderReadingView(): void {
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			const view = leaf.view;
 			if (view instanceof MarkdownView) {
-				// previewMode.rerender(true) 强制完全重新渲染
-				const previewMode = (
-					view as unknown as {
-						previewMode?: { rerender: (full?: boolean) => void };
-					}
-				).previewMode;
-				if (previewMode && typeof previewMode.rerender === 'function') {
-					previewMode.rerender(true);
+				const file = view.file;
+				if (file) {
+					// 保存当前视图状态，重新打开文件后恢复
+					const state = leaf.getViewState();
+					void leaf.openFile(file, state);
 				}
 			}
 		});

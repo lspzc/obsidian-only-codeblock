@@ -98,6 +98,8 @@ export interface OnlyCodeblockSettings {
 	/* ---------- 复制 ---------- */
 	/** 复制成功显示 Notice */
 	showCopyNotice: boolean;
+	/** 复制成功 Notice 显示时长（秒） */
+	copyNoticeDuration: number;
 	/** 复制按钮文本 */
 	copyButtonText: string;
 	/** 复制成功后按钮显示的文本 */

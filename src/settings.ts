@@ -202,7 +202,7 @@ export class OnlyCodeblockSettingTab extends PluginSettingTab {
 			.setDesc('当代码块未设置 title 时显示的占位名称。')
 			.addText((text) =>
 				text
-					.setPlaceholder('Code')
+					.setPlaceholder('代码块')
 					.setValue(this.plugin.settings.defaultName)
 					.onChange(async (value) => {
 						this.plugin.settings.defaultName = value;
@@ -595,9 +595,32 @@ export class OnlyCodeblockSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.showCopyNotice = value;
 						await this.plugin.saveSettings();
+						const scrollTop = this.getSettingsScrollTop();
+						this.display();
+						this.setSettingsScrollTop(scrollTop);
 					}),
 			);
 		this.addReset(s1, 'showCopyNotice');
+
+		// 复制成功提示时间（仅 showCopyNotice=true 时显示，作为子项）
+		if (this.plugin.settings.showCopyNotice) {
+			const sub = this.createSubContainer(containerEl);
+			const s1b = new Setting(sub)
+				.setName('复制成功提示时间 (秒)')
+				// eslint-disable-next-line obsidianmd/ui/sentence-case -- 中文描述
+				.setDesc('复制成功后 Notice 与按钮文本变色持续的秒数。范围 1 ~ 3，步长 0.5。')
+				.addSlider((slider) => {
+					slider
+						.setLimits(1, 3, 0.5)
+						.setValue(this.plugin.settings.copyNoticeDuration)
+						.setDynamicTooltip()
+						.onChange(async (value) => {
+							this.plugin.settings.copyNoticeDuration = Math.round(value * 2) / 2;
+							await this.plugin.saveSettings();
+						});
+				});
+			this.addReset(s1b, 'copyNoticeDuration');
+		}
 
 		const s2 = new Setting(containerEl)
 			.setName('复制按钮文本')

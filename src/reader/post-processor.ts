@@ -232,7 +232,7 @@ export function registerCodeBlockPostProcessor(plugin: PluginLike): void {
                 settings,
                 isDark,
                 onCopy: settings.showCopyNotice
-                    ? () => new Notice('已复制代码')
+                    ? () => new Notice('已复制代码', (settings.copyNoticeDuration ?? 2) * 1000)
                     : undefined,
             });
 

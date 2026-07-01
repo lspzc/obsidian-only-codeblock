@@ -88,7 +88,7 @@ export const CSS_CLASS = {
 /** 默认设置 */
 export const DEFAULT_SETTINGS: OnlyCodeblockSettings = {
     // 命名与折叠
-    defaultName: 'Code',
+    defaultName: '代码块',
     defaultFolded: false,
 
     // 语言
@@ -120,6 +120,7 @@ export const DEFAULT_SETTINGS: OnlyCodeblockSettings = {
 
     // 复制
     showCopyNotice: true,
+    copyNoticeDuration: 2,
     copyButtonText: '点击复制',
     copySuccessText: '复制成功',
     copySuccessColorLight: '#2ea043',
